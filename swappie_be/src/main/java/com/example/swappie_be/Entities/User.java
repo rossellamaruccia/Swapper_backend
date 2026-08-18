@@ -38,6 +38,8 @@ public class User implements UserDetails {
     private Point location;
     @Transient
     private Double distanceMeters;
+    @OneToMany(mappedBy = "user")
+    private List<Item> items;
     @ManyToMany
     @JoinTable(
             name = "Favourites",

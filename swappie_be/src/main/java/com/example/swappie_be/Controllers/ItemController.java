@@ -7,6 +7,7 @@ import com.example.swappie_be.Exceptions.ValidationException;
 import com.example.swappie_be.Payloads.ItemDTO;
 import com.example.swappie_be.Payloads.ItemGetResponseDTO;
 import com.example.swappie_be.Services.ItemService;
+import com.example.swappie_be.Services.UserService;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,14 +18,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/items")
 public class ItemController {
     private final ItemService itemService;
+    private final UserService userService;
 
-    public ItemController(ItemService itemService) {
+    public ItemController(ItemService itemService, UserService userService) {
         this.itemService = itemService;
+        this.userService = userService;
     }
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -50,8 +54,13 @@ public class ItemController {
     }
 
     @GetMapping("")
-    public ArrayList<ItemGetResponseDTO> getItemsPerUser(@AuthenticationPrincipal User user) {
-        return this.itemService.findItemsPerUserId(user.getUser_id());
+    public ArrayList<ItemGetResponseDTO> getItemsPerUser(@AuthenticationPrincipal User user, @RequestParam(name = "user") UUID uuid) {
+        if (user.getUser_id() == uuid) {
+            return this.itemService.findItemsPerUser(user);
+        } else {
+            User user1 = this.userService.findById(uuid);
+            return this.itemService.findItemsPerUser(user1);
+        }
     }
 
     @GetMapping("/details")

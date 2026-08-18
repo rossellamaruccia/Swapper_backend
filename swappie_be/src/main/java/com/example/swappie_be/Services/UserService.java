@@ -37,7 +37,7 @@ public class UserService {
     }
 
     public void save(UserDTO payload, Point userPoint) {
-        User newUser = new User(payload.name(), payload.surname(), payload.email(), passwordEncoder.encode(payload.password()), payload.city());
+        User newUser = new User(payload.name(), payload.surname(), payload.username(), payload.email(), passwordEncoder.encode(payload.password()), payload.city());
         newUser.setLocation(userPoint);
         this.userRepo.save(newUser);
     }
@@ -57,16 +57,7 @@ public class UserService {
         User user = this.userRepo.findByEmail(email).orElseThrow();
         return user.getUser_id();
     }
-
-    public UserGetResponseDTO findFlatUserById(UUID id) {
-        Optional<User> op = this.userRepo.findById(id);
-        if (op.isPresent()) {
-            User user = op.get();
-            LocationDTO flatPoint = new LocationDTO(user.getLocation().getX(), user.getLocation().getY());
-            UserGetResponseDTO flatUser = new UserGetResponseDTO(user.getUser_id(), user.getName(), user.getSurname(), user.getEmail(), user.getCity(), user.getProfilePic(), flatPoint);
-            return flatUser;
-        } else throw new NotFoundException(id);
-    }
+    
 
     public User findByEmail(String email) {
         Optional<User> op = this.userRepo.findByEmail(email);

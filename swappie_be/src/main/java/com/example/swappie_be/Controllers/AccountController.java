@@ -38,19 +38,11 @@ public class AccountController {
     }
 
     @GetMapping("/details")
-    public UserGetResponseDTO getUserDetails(@AuthenticationPrincipal User user, @RequestParam(name = "id", required = false) String id) {
+    public UserGetResponseDTO getUserDetails(@RequestParam(name = "id", required = false) String id) {
         UUID userID = UUID.fromString(id);
         return this.userService.findUserDetailsById(userID);
     }
 
-    @GetMapping("/me")
-    public UserGetResponseDTO getCurrentUser(@AuthenticationPrincipal User user) {
-        if (user == null) {
-            throw new UnauthorizedException("Log in again");
-        } else {
-            return this.userService.findFlatUserById(user.getUser_id());
-        }
-    }
 
     @PutMapping(value = "/me/edit")
     public void getUserByIdAndUpdate(@AuthenticationPrincipal User user, @RequestBody @Validated UserDTO payload, BindingResult validationResult) {

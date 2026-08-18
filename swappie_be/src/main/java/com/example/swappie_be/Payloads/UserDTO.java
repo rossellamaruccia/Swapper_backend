@@ -1,5 +1,8 @@
 package com.example.swappie_be.Payloads;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 public record UserDTO(
         String name,
         String surname,

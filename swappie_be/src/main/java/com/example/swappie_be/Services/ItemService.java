@@ -77,8 +77,8 @@ public class ItemService {
         }
     }
 
-    public ArrayList<ItemGetResponseDTO> findItemsPerUserId(UUID user_id) {
-        Optional<ArrayList<Item>> optional = this.itemRepo.findAllByUser(user_id);
+    public ArrayList<ItemGetResponseDTO> findItemsPerUser(User user) {
+        Optional<ArrayList<Item>> optional = this.itemRepo.findAllByUser(user);
         if (optional.isPresent()) {
             ArrayList<Item> array = optional.get();
             return array.stream()
@@ -94,16 +94,17 @@ public class ItemService {
                             item.getLocation().getY()
                     ))
                     .collect(Collectors.toCollection(ArrayList::new));
-        } else throw new NotFoundException(user_id);
+        } else throw new NotFoundException(user.getUser_id());
     }
 
     public List<ItemGetResponseDTO> findAllItems(User user, int radius) {
         double userLon = user.getLocation().getX();
         double userLat = user.getLocation().getY();
+        UUID uuid = user.getUser_id();
 
-        return this.itemRepo.findItemsWithinRadius(userLat, userLon, radius, user.getUser_id())
+        return this.itemRepo.findItemsWithinRadius(userLat, userLon, radius)
                 .stream()
-                .filter(item -> !item.getUser().getUser_id().equals(user.getUser_id()))
+                .filter(item -> !item.getUser().getUser_id().equals(uuid))
                 .map(item -> new ItemGetResponseDTO(
                         item.getItem_id(),
                         item.getTitle(),
@@ -128,9 +129,11 @@ public class ItemService {
     public List<ItemGetResponseDTO> findAllByCategory(User user, Category category, int radius) {
         double userLon = user.getLocation().getX();
         double userLat = user.getLocation().getY();
+        UUID uuid = user.getUser_id();
 
-        return this.itemRepo.findItemsWithinRadius(userLat, userLon, radius, user.getUser_id())
+        return this.itemRepo.findItemsWithinRadius(userLat, userLon, radius)
                 .stream()
+                .filter(item -> !item.getUser().getUser_id().equals(uuid))
                 .filter(item -> item.getCategory() == category)
                 .map(item -> new ItemGetResponseDTO(
                         item.getItem_id(),
