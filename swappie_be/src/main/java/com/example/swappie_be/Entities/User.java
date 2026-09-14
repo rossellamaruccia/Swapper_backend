@@ -43,7 +43,7 @@ public class User implements UserDetails {
     @ManyToMany
     @JoinTable(
             name = "Favourites",
-            joinColumns = @JoinColumn(name = "user_id"),  // Foreign key in join table for Student
+            joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "item_id")
     )
     private Set<Item> favouriteItems = new HashSet<>();

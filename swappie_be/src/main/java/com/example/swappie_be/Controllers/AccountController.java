@@ -1,5 +1,6 @@
 package com.example.swappie_be.Controllers;
 
+import com.example.swappie_be.Entities.Item;
 import com.example.swappie_be.Entities.User;
 import com.example.swappie_be.Exceptions.BadRequestException;
 import com.example.swappie_be.Exceptions.UnauthorizedException;
@@ -7,6 +8,7 @@ import com.example.swappie_be.Exceptions.ValidationException;
 import com.example.swappie_be.Payloads.LocationDTO;
 import com.example.swappie_be.Payloads.UserDTO;
 import com.example.swappie_be.Payloads.UserGetResponseDTO;
+import com.example.swappie_be.Services.ItemService;
 import com.example.swappie_be.Services.UserService;
 import com.example.swappie_be.config.Geometry;
 import org.locationtech.jts.geom.Point;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
@@ -29,18 +32,25 @@ import java.util.UUID;
 public class AccountController {
     private static final Logger log = LoggerFactory.getLogger(AccountController.class);
     private final UserService userService;
+    private final ItemService itemService;
     private final Geometry geometry;
 
     @Autowired
-    public AccountController(UserService userService, Geometry geometry) {
+    public AccountController(UserService userService, ItemService itemService, Geometry geometry) {
         this.geometry = geometry;
+        this.itemService = itemService;
         this.userService = userService;
     }
 
     @GetMapping("/details")
-    public UserGetResponseDTO getUserDetails(@RequestParam(name = "id", required = false) String id) {
-        UUID userID = UUID.fromString(id);
-        return this.userService.findUserDetailsById(userID);
+    public UserGetResponseDTO getUserDetails(@AuthenticationPrincipal User user, @RequestParam(name = "id", required = false) String id) {
+        if (id == null) {
+            UUID userId = user.getUser_id();
+            return this.userService.findUserDetailsById(userId);
+        } else {
+            UUID userID = UUID.fromString(id);
+            return this.userService.findUserDetailsById(userID);
+        }
     }
 
 
@@ -77,5 +87,19 @@ public class AccountController {
             Point userPoint = geometry.createPoint(location.lng(), location.lat());
             this.userService.findByIdAndSetLocation(user, userPoint);
         }
+    }
+
+    @PutMapping("/me/fav/add")
+    public ResponseEntity<Void> addFavItem(@AuthenticationPrincipal User user, @RequestParam(name = "id") long itemID) {
+        Item fav = this.itemService.findByID(itemID);
+        this.userService.saveFavourite(user, fav);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/me/fav/remove")
+    public ResponseEntity<Void> removeFavItem(@AuthenticationPrincipal User user, @RequestParam(name = "id") long itemID) {
+        Item fav = this.itemService.findByID(itemID);
+        this.userService.removeFavourite(user, fav);
+        return ResponseEntity.ok().build();
     }
 }

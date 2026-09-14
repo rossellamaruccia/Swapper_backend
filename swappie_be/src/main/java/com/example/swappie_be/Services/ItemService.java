@@ -119,6 +119,10 @@ public class ItemService {
                 .collect(Collectors.toList());
     }// questa funzione deve ritornare tutti gli item tranne quelli dell'user che fa la richiesta
 
+    public Item findByID(long id) {
+        return this.itemRepo.findById(id).orElseThrow();
+    }
+
     public ItemGetResponseDTO findItemById(long id) {
         Item found = this.itemRepo.findById(id).orElseThrow();
         double lng = found.getLocation().getX();

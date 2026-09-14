@@ -1,8 +1,10 @@
 package com.example.swappie_be.Services;
 
 import com.cloudinary.utils.ObjectUtils;
+import com.example.swappie_be.Entities.Item;
 import com.example.swappie_be.Entities.User;
 import com.example.swappie_be.Exceptions.NotFoundException;
+import com.example.swappie_be.Payloads.ItemGetResponseDTO;
 import com.example.swappie_be.Payloads.LocationDTO;
 import com.example.swappie_be.Payloads.UserDTO;
 import com.example.swappie_be.Payloads.UserGetResponseDTO;
@@ -13,12 +15,15 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -48,16 +53,31 @@ public class UserService {
         else throw new NotFoundException(id);
     }
 
+    @Transactional(readOnly = true)
     public UserGetResponseDTO findUserDetailsById(UUID id) {
         User user = this.userRepo.findById(id).orElseThrow();
-        return new UserGetResponseDTO(user.getUser_id(), user.getName(), user.getSurname(), user.getEmail(), user.getCity(), user.getProfilePic(), new LocationDTO(user.getLocation().getX(), user.getLocation().getY()));
+        Set<ItemGetResponseDTO> favouriteItemsDTO = user.getFavouriteItems()
+                .stream()
+                .map(item -> new ItemGetResponseDTO(
+                        item.getItem_id(),
+                        item.getTitle(),
+                        item.getDescription(),
+                        item.getType(),
+                        item.getCategory(),
+                        item.getUserId(),
+                        item.getPics(),
+                        item.getLocation().getY(),
+                        item.getLocation().getX()
+                ))
+                .collect(Collectors.toSet());
+        return new UserGetResponseDTO(user.getUser_id(), user.getName(), user.getSurname(), user.getUsername(), user.getEmail(), user.getCity(), user.getProfilePic(), new LocationDTO(user.getLocation().getX(), user.getLocation().getY()), favouriteItemsDTO);
     }
 
     public UUID returnID(String email) {
         User user = this.userRepo.findByEmail(email).orElseThrow();
         return user.getUser_id();
     }
-    
+
 
     public User findByEmail(String email) {
         Optional<User> op = this.userRepo.findByEmail(email);
@@ -108,5 +128,19 @@ public class UserService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to update your location", e);
         }
+    }
+
+    @Transactional
+    public void saveFavourite(User user, Item item) {
+        User activeUser = this.userRepo.findById(user.getUser_id())
+                .orElseThrow(() -> new NotFoundException("Utente non trovato"));
+        activeUser.getFavouriteItems().add(item);
+    }
+
+    @Transactional
+    public void removeFavourite(User user, Item item) {
+        User activeUser = this.userRepo.findById(user.getUser_id())
+                .orElseThrow(() -> new NotFoundException("Utente non trovato"));
+        activeUser.getFavouriteItems().remove(item);
     }
 }
